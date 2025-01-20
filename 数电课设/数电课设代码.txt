@@ -1,0 +1,222 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 2024/09/08 20:54:43
+// Design Name: 
+// Module Name: stop_watch
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+module stop_watch(
+    input clk, 
+    input rstn, // start and reset; 1 for start, 0 for reset
+    input pause, // pause and continue; 0 for continue, 1 for pause
+    output [3:0] disp_an_o, // which to be lighted
+    output [7:0] disp_seg_o // which num to be displayed
+);
+   wire clk_1hz, clk_16div;
+   wire [7:0] seconds; // [0, 59]
+   wire [7:0] minutes; // [0, 100]
+
+   // generate 1hz clk
+   clock_divider clk_div(
+       .clk(clk),
+       .rstn(rstn),
+       .pause(pause),
+       .clk_1hz(clk_1hz)
+   );
+
+   clk_16divider clk16div(
+       .clk(clk),
+       .rstn(rstn),
+       .pause(pause),
+       .clk_16div(clk_16div)
+   );
+
+    // an selector to control which an is lighted
+    an_selector an_st(
+        .clk(clk_16div), // a quick clk 
+        .pause(pause),
+        .seconds(seconds),
+        .minutes(minutes),
+        .an(disp_an_o),
+        .seg(disp_seg_o)
+    );
+
+    // to count seconds and minutes properly
+    my_counter counter(
+        .clk(clk_1hz),
+        .rstn(rstn),
+        .pause(pause),
+        .seconds(seconds),
+        .minutes(minutes)
+    );
+
+endmodule
+
+module clock_divider(
+    input clk,
+    input rstn,
+    input pause,
+    output reg clk_1hz
+);
+    reg [25:0] counter;
+    always @(posedge clk) begin
+        if (!rstn) begin
+            counter <= 0;
+            clk_1hz <= 0;
+        end else begin
+            if(pause == 1)
+                counter <= counter;
+            else
+                if(counter == 25000000 - 1) begin
+                    counter <= 0;
+                    clk_1hz <= ~clk_1hz; // toggle clk_1hz
+                end else begin
+                    counter <= counter + 1;
+                end
+            
+        end
+    end
+endmodule
+
+module clk_16divider(
+    input clk,
+    input rstn,
+    input pause,
+    output wire clk_16div
+);
+    reg [8:0] counter;  // 4-bit counter to divide clock by 16
+
+    always @(posedge clk or negedge rstn) begin
+        if (!rstn) begin
+            counter <= 0;
+        end 
+        else begin
+            if(pause == 1)
+                counter <= counter;
+            else
+                counter <= counter + 1;
+            
+        end
+    end
+
+    assign clk_16div = counter[8];
+
+endmodule
+
+
+module an_selector(
+    input clk,
+    input rstn,
+    input pause,
+    input [7:0] seconds,
+    input [7:0] minutes,
+    output reg [3:0] an,
+    output reg [7:0] seg
+);
+    reg [3:0] m1, m0; // MM
+    reg [3:0] s1, s0; // SS
+
+    always @(minutes, seconds) begin
+        m1 = minutes / 10;
+        m0 = minutes % 10;
+        s1 = seconds / 10;
+        s0 = seconds % 10;
+    end 
+
+    reg [1: 0] selector; // [0, 3]
+
+    always @(posedge clk) begin
+        if(pause == 1)
+            selector <= selector;
+        
+        else
+            selector <= selector + 1;
+        
+    end
+
+    function [7:0] seven_seg_translator;
+        input [3:0] digit; // [0, 9]
+        case (digit) // 共阳极数码管
+            0: seven_seg_translator = 8'hc0;
+            1: seven_seg_translator = 8'hf9;
+            2: seven_seg_translator = 8'ha4;
+            3: seven_seg_translator = 8'hb0;
+            4: seven_seg_translator = 8'h99;
+            5: seven_seg_translator = 8'h92;
+            6: seven_seg_translator = 8'h82;
+            7: seven_seg_translator = 8'hf8;
+            8: seven_seg_translator = 8'h80;
+            9: seven_seg_translator = 8'h90;
+            default: seven_seg_translator = 8'hff;
+        endcase
+    endfunction
+    
+    always @(selector, m1, m0, s1, s0) begin
+        case (selector)
+            2'b00: begin
+                an = 4'b1110;
+                seg = seven_seg_translator(s0);
+            end
+            2'b01: begin
+                an = 4'b1101;
+                seg = seven_seg_translator(s1);
+            end
+            2'b10: begin
+                an = 4'b1011;
+                seg = seven_seg_translator(m0);
+            end
+            2'b11: begin
+                an = 4'b0111;
+                seg = seven_seg_translator(m1);
+            end
+        endcase
+    end
+endmodule
+
+module my_counter(
+    input clk,
+    input rstn,
+    input pause,
+    output reg [7:0] seconds,
+    output reg [7:0] minutes
+);
+    parameter MAX_SECONDS = 59;
+    parameter MAX_MINUTES = 59;
+
+    always @(posedge clk) begin
+        if (!rstn) begin
+            seconds <= 0;
+            minutes <= 0;
+        end else begin
+            if(pause == 1) begin
+                seconds <= seconds;
+                minutes <= minutes;
+                end
+            else begin
+                if (seconds == MAX_SECONDS) begin
+                    seconds <= 0;
+                    if (minutes == MAX_MINUTES) begin
+                        minutes <= 0;
+                    end else begin
+                        minutes <= minutes + 1;
+                    end
+                end else begin
+                    seconds <= seconds + 1;
+                end
+            end
+        end
+    end
+endmodule
