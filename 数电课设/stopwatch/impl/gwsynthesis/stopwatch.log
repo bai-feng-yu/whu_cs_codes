@@ -1,0 +1,35 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file 'D:\project\stopwatch\stop_watch.v'
+Compiling module 'stop_watch'("D:\project\stopwatch\stop_watch.v":1)
+Compiling module 'clock_divider'("D:\project\stopwatch\stop_watch.v":53)
+WARN  (EX3791) : Expression size 27 truncated to fit in target size 26("D:\project\stopwatch\stop_watch.v":65)
+Compiling module 'clk_16divider'("D:\project\stopwatch\stop_watch.v":74)
+Compiling module 'an_selector'("D:\project\stopwatch\stop_watch.v":89)
+WARN  (EX3791) : Expression size 8 truncated to fit in target size 4("D:\project\stopwatch\stop_watch.v":101)
+WARN  (EX3791) : Expression size 8 truncated to fit in target size 4("D:\project\stopwatch\stop_watch.v":103)
+WARN  (EX3791) : Expression size 3 truncated to fit in target size 2("D:\project\stopwatch\stop_watch.v":110)
+Compiling module 'my_counter'("D:\project\stopwatch\stop_watch.v":152)
+WARN  (EX3791) : Expression size 9 truncated to fit in target size 8("D:\project\stopwatch\stop_watch.v":221)
+WARN  (EX3791) : Expression size 9 truncated to fit in target size 8("D:\project\stopwatch\stop_watch.v":225)
+WARN  (EX2565) : Input 'rstn' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("D:\project\stopwatch\stop_watch.v":33)
+NOTE  (EX0101) : Current top module is "stop_watch"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+[95%] Generate netlist file "D:\project\stopwatch\impl\gwsynthesis\stopwatch.vg" completed
+[100%] Generate report file "D:\project\stopwatch\impl\gwsynthesis\stopwatch_syn.rpt.html" completed
+GowinSynthesis finish

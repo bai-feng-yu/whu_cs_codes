@@ -1,0 +1,13 @@
+-d D:\project\stopwatch\impl\gwsynthesis\stopwatch.vg
+-p GW1N-9C-eLQFP144-6
+-pn GW1N-UV9EQ144C6/I5
+-cst D:\project\stopwatch\src\stopwatch.cst
+-cfg D:\project\stopwatch\impl\pnr\device.cfg
+-bit
+-tr
+-ph
+-timing
+-cst_error
+-correct_hold 1
+-route_maxfan 23
+-global_freq 50.000

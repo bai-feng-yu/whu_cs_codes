@@ -1,0 +1,44 @@
+[
+ {
+  "InstFile" : "D:/project/stopwatch/stop_watch.v",
+  "InstLine" : 1,
+  "InstName" : "stop_watch",
+  "ModuleFile" : "D:/project/stopwatch/stop_watch.v",
+  "ModuleLine" : 1,
+  "ModuleName" : "stop_watch",
+  "SubInsts" : [
+   {
+    "InstFile" : "D:/project/stopwatch/stop_watch.v",
+    "InstLine" : 16,
+    "InstName" : "clk_div",
+    "ModuleFile" : "D:/project/stopwatch/stop_watch.v",
+    "ModuleLine" : 53,
+    "ModuleName" : "clock_divider"
+   },
+   {
+    "InstFile" : "D:/project/stopwatch/stop_watch.v",
+    "InstLine" : 21,
+    "InstName" : "clk16div",
+    "ModuleFile" : "D:/project/stopwatch/stop_watch.v",
+    "ModuleLine" : 74,
+    "ModuleName" : "clk_16divider"
+   },
+   {
+    "InstFile" : "D:/project/stopwatch/stop_watch.v",
+    "InstLine" : 27,
+    "InstName" : "an_st",
+    "ModuleFile" : "D:/project/stopwatch/stop_watch.v",
+    "ModuleLine" : 89,
+    "ModuleName" : "an_selector"
+   },
+   {
+    "InstFile" : "D:/project/stopwatch/stop_watch.v",
+    "InstLine" : 36,
+    "InstName" : "counter",
+    "ModuleFile" : "D:/project/stopwatch/stop_watch.v",
+    "ModuleLine" : 152,
+    "ModuleName" : "my_counter"
+   }
+  ]
+ }
+]

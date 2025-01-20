@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="stop_watch" T_Register="54(0)" T_Alu="33(0)" T_Lut="149(0)">
+    <SubModule name="clk_div" Register="27" Alu="25" Lut="15" T_Register="27(27)" T_Alu="25(25)" T_Lut="15(15)"/>
+    <SubModule name="clk16div" Register="9" Alu="8" Lut="1" T_Register="9(9)" T_Alu="8(8)" T_Lut="1(1)"/>
+    <SubModule name="an_st" Register="2" Lut="79" T_Register="2(2)" T_Lut="79(79)"/>
+    <SubModule name="counter" Register="16" Lut="54" T_Register="16(16)" T_Lut="54(54)"/>
+</Module>
