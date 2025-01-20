@@ -1,0 +1,258 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 2024/11/10 16:26:34
+// Design Name: 
+// Module Name: test
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module test(
+        input clk,
+        input rstn,
+        input [15:0] sw_i,
+        output [7:0] disp_an_o,
+        output [7:0] disp_seg_o
+    );
+
+    SCPU_TOP scpu( 
+        .clk(clk),
+        .rstn(rstn),  
+        .sw_i(sw_i), 
+        .disp_an_o(disp_an_o), 
+        .disp_seg_o(disp_seg_o) 
+        );   
+endmodule
+
+module clk_16divider(
+    input clk,
+    output wire clk_16div
+);
+    reg [8:0] counter;  
+
+    always @(posedge clk) begin
+        counter <= counter + 1;
+    end
+
+    assign clk_16div = counter[8];
+
+endmodule
+
+module an_selector(
+    input clk,
+    input rstn,
+    input [15:0]sw_i,
+    input [63:0]i_data,
+    output reg [7:0] an,
+    output reg [7:0] seg
+);
+    reg [2: 0] selector;
+    
+    always @(posedge clk) begin
+        selector <= selector + 1;
+    end
+    
+    reg [63:0] i_data_store;
+    always@(posedge clk,negedge rstn)
+    begin
+        if(!rstn)
+            i_data_store<=0;
+        else
+            i_data_store<=i_data;
+    end
+    
+    reg [7:0]seg_data_r;
+    
+    always@(*)begin
+    if(sw_i[0]==0)begin //文本模式
+        case(selector)
+           0:seg_data_r=i_data_store[3:0];
+           1:seg_data_r=i_data_store[7:4];
+           2:seg_data_r=i_data_store[11:8];
+           3:seg_data_r=i_data_store[15:12];
+           4:seg_data_r=i_data_store[19:16];
+           5:seg_data_r=i_data_store[23:20];
+           6:seg_data_r=i_data_store[27:24];
+           7:seg_data_r=i_data_store[31:28];
+        endcase end
+    else if(sw_i[0]==1)begin //图形模式
+        case(selector)
+           0:seg_data_r=i_data_store[7:0];
+           1:seg_data_r=i_data_store[15:8];
+           2:seg_data_r=i_data_store[23:16];
+           3:seg_data_r=i_data_store[31:24];
+           4:seg_data_r=i_data_store[39:32];
+           5:seg_data_r=i_data_store[47:40];
+           6:seg_data_r=i_data_store[55:48];
+           7:seg_data_r=i_data_store[63:56];
+        endcase end
+    end
+
+    function [7:0] seven_seg_translator;
+        input [7:0] seg_data;
+        input sw;
+        input r;
+        if(!r)begin
+            seven_seg_translator= 8'hff; 
+            end
+        else if(sw==0)begin
+        case (seg_data) // 共阳极数码管
+            4'h0: seven_seg_translator = 8'hc0;
+            4'h1: seven_seg_translator = 8'hf9;
+            4'h2: seven_seg_translator = 8'ha4;
+            4'h3: seven_seg_translator = 8'hb0;
+            4'h4: seven_seg_translator = 8'h99;
+            4'h5: seven_seg_translator = 8'h92;
+            4'h6: seven_seg_translator = 8'h82;
+            4'h7: seven_seg_translator = 8'hf8;
+            4'h8: seven_seg_translator = 8'h80;
+            4'h9: seven_seg_translator = 8'h90;
+            4'hA: seven_seg_translator = 8'h88;
+            4'hB: seven_seg_translator = 8'h83;
+            4'hC: seven_seg_translator = 8'hC6;
+            4'hD: seven_seg_translator = 8'hA1;
+            4'hE: seven_seg_translator = 8'h86;
+            4'hF: seven_seg_translator = 8'h8E;
+            default: seven_seg_translator = 8'hff;
+        endcase end
+        else begin seven_seg_translator =seg_data; end
+    endfunction
+    
+always @(selector) begin
+    case (selector)
+        3'b000: begin
+            an <= 8'b1111_1110;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b001: begin
+            an <= 8'b1111_1101;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b010: begin
+            an <= 8'b1111_1011;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b011: begin
+            an <= 8'b1111_0111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b100: begin
+            an <= 8'b1110_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b101: begin
+            an <= 8'b1101_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b110: begin
+            an <= 8'b1011_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b111: begin
+            an <= 8'b0111_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+    endcase
+end
+
+endmodule
+
+module SCPU_TOP( 
+input clk,  //100MHZ CLK
+input rstn,  //reset signal
+input [15:0] sw_i, //sw_i[15]---sw_i[0] 
+output wire [7:0] disp_an_o, //8位数码管位选
+output wire[7:0] disp_seg_o //数码管8段数据
+); 
+    reg[31:0]clkdiv;
+    wire clk_cpu;
+    
+    always@(posedge clk or negedge rstn)begin
+        if(!rstn)   clkdiv<=1'b0;
+        else clkdiv=clkdiv+1'b1;
+    end
+    
+    assign clk_cpu=(sw_i[15])? clkdiv[27]:clkdiv[25];
+    reg[63:0] i_data;
+    
+    reg [4:0] led_addr;
+    reg [63:0]LED_DATA[4:0];
+    parameter LED_DATA_NUM = 16;
+    wire [63:0]led;
+    initial begin
+        LED_DATA[0]   = 64'hC6F6F6F0C6F6F6F0;
+        LED_DATA[1]   = 64'hF9F6F6CFF9F6F6CF;
+        LED_DATA[2]   = 64'hFFC6F0FFFFC6F0FF;
+        LED_DATA[3]   = 64'hFFC0FFFFFFC0FFFF;
+        LED_DATA[4]   = 64'hFFA3FFFFFFA3FFFF;
+        LED_DATA[5]   = 64'hFFFFA3FFFFFFA3FF;
+        LED_DATA[6]   = 64'hFFFF9CFFFFFF9CFF;
+        LED_DATA[7]   = 64'hFF9EBCFFFF9EBCFF;
+        LED_DATA[8]   = 64'hFF9CFFFFFF9CFFFF;
+        LED_DATA[9]   = 64'hFFC0FFFFFFC0FFFF;
+        LED_DATA[10]  = 64'hFFA3FFFFFFA3FFFF;
+        LED_DATA[11]  = 64'hFFA7B3FFFFA7B3FF;
+        LED_DATA[12]  = 64'hFFC6F0FFFFC6F0FF;
+        LED_DATA[13]  = 64'hF9F6F6CFF9F6F6CF;
+        LED_DATA[14]  = 64'h9EBEBEBC9EBEBEBC;
+        LED_DATA[15]  = 64'h2737373327373733;
+    end
+    
+    assign led=LED_DATA[led_addr];
+    
+    wire[31:0] ROM_data;//ROM
+    reg[3:0]rom_addr;
+    parameter INSTR_NUM = 11;
+    
+    dist_mem_im U_IM(
+        .a(rom_addr),
+        .spo(ROM_data)
+        );
+ 
+    always@(posedge clk_cpu or negedge rstn)begin
+        if(!rstn)begin
+            rom_addr<=4'b0;
+            led_addr<=4'b0;
+        end
+        else if(sw_i[14]==1)begin
+            if(rom_addr==INSTR_NUM)rom_addr<=4'b0;
+            else rom_addr=rom_addr+1'b1;
+        end
+        else begin
+            if(led_addr==LED_DATA_NUM)led_addr<=4'b0;
+            else led_addr=led_addr+1'b1;
+        end
+    end
+    
+    always@(*)begin
+        if(sw_i[14]==1)i_data<=ROM_data;
+        else i_data<=led;
+    end
+    
+    wire clk_16div;
+    clk_16divider clk16div(
+        .clk(clk),
+        .clk_16div(clk_16div)
+    );
+    an_selector an_st(
+        .clk(clk_16div),
+        .rstn(rstn),
+        .sw_i(sw_i),
+        .i_data(i_data),
+        .an(disp_an_o),
+        .seg(disp_seg_o)
+    );
+endmodule

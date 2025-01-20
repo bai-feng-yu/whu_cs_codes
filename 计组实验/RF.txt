@@ -1,0 +1,310 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 2024/11/10 16:26:34
+// Design Name: 
+// Module Name: test
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module test(
+        input clk,
+        input rstn,
+        input [15:0] sw_i,
+        output [7:0] disp_an_o,
+        output [7:0] disp_seg_o
+    );
+
+    SCPU_TOP scpu( 
+        .clk(clk),
+        .rstn(rstn),  
+        .sw_i(sw_i), 
+        .disp_an_o(disp_an_o), 
+        .disp_seg_o(disp_seg_o) 
+        );   
+endmodule
+
+module clk_16divider(
+    input clk,
+    output wire clk_16div
+);
+    reg [8:0] counter;  
+
+    always @(posedge clk) begin
+        counter <= counter + 1;
+    end
+
+    assign clk_16div = counter[8];
+
+endmodule
+
+module an_selector(
+    input clk,
+    input rstn,
+    input [15:0]sw_i,
+    input [63:0]i_data,
+    output reg [7:0] an,
+    output reg [7:0] seg
+);
+    reg [2: 0] selector;
+    
+    always @(posedge clk) begin
+        selector <= selector + 1;
+    end
+    
+    reg [63:0] i_data_store;
+    always@(posedge clk,negedge rstn)
+    begin
+        if(!rstn)
+            i_data_store<=0;
+        else
+            i_data_store<=i_data;
+    end
+    
+    reg [7:0]seg_data_r;
+    
+    always@(*)begin
+    if(sw_i[0]==0)begin //文本模式
+        case(selector)
+           0:seg_data_r=i_data_store[3:0];
+           1:seg_data_r=i_data_store[7:4];
+           2:seg_data_r=i_data_store[11:8];
+           3:seg_data_r=i_data_store[15:12];
+           4:seg_data_r=i_data_store[19:16];
+           5:seg_data_r=i_data_store[23:20];
+           6:seg_data_r=i_data_store[27:24];
+           7:seg_data_r=i_data_store[31:28];
+        endcase end
+    else if(sw_i[0]==1)begin //图形模式
+        case(selector)
+           0:seg_data_r=i_data_store[7:0];
+           1:seg_data_r=i_data_store[15:8];
+           2:seg_data_r=i_data_store[23:16];
+           3:seg_data_r=i_data_store[31:24];
+           4:seg_data_r=i_data_store[39:32];
+           5:seg_data_r=i_data_store[47:40];
+           6:seg_data_r=i_data_store[55:48];
+           7:seg_data_r=i_data_store[63:56];
+        endcase end
+    end
+
+    function [7:0] seven_seg_translator;
+        input [7:0] seg_data;
+        input sw;
+        input r;
+        if(!r)begin
+            seven_seg_translator= 8'hff; 
+            end
+        else if(sw==0)begin
+        case (seg_data) // 共阳极数码管
+            4'h0: seven_seg_translator = 8'hc0;
+            4'h1: seven_seg_translator = 8'hf9;
+            4'h2: seven_seg_translator = 8'ha4;
+            4'h3: seven_seg_translator = 8'hb0;
+            4'h4: seven_seg_translator = 8'h99;
+            4'h5: seven_seg_translator = 8'h92;
+            4'h6: seven_seg_translator = 8'h82;
+            4'h7: seven_seg_translator = 8'hf8;
+            4'h8: seven_seg_translator = 8'h80;
+            4'h9: seven_seg_translator = 8'h90;
+            4'hA: seven_seg_translator = 8'h88;
+            4'hB: seven_seg_translator = 8'h83;
+            4'hC: seven_seg_translator = 8'hC6;
+            4'hD: seven_seg_translator = 8'hA1;
+            4'hE: seven_seg_translator = 8'h86;
+            4'hF: seven_seg_translator = 8'h8E;
+            default: seven_seg_translator = 8'hff;
+        endcase end
+        else begin seven_seg_translator =seg_data; end
+    endfunction
+    
+always @(selector) begin
+    case (selector)
+        3'b000: begin
+            an <= 8'b1111_1110;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b001: begin
+            an <= 8'b1111_1101;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b010: begin
+            an <= 8'b1111_1011;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b011: begin
+            an <= 8'b1111_0111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b100: begin
+            an <= 8'b1110_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b101: begin
+            an <= 8'b1101_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b110: begin
+            an <= 8'b1011_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+        3'b111: begin
+            an <= 8'b0111_1111;
+            seg <= seven_seg_translator(seg_data_r,sw_i[0],rstn);
+        end
+    endcase
+end
+
+endmodule
+
+module SCPU_TOP( 
+input clk,  //100MHZ CLK
+input rstn,  //reset signal
+input [15:0] sw_i, //sw_i[15]---sw_i[0] 
+output wire [7:0] disp_an_o, //8位数码管位选
+output wire[7:0] disp_seg_o //数码管8段数据
+); 
+    reg[31:0]clkdiv;//时钟
+    wire clk_cpu;
+    
+    always@(posedge clk or negedge rstn)begin
+        if(!rstn)   clkdiv<=1'b0;
+        else clkdiv=clkdiv+1'b1;
+    end
+    assign clk_cpu=(sw_i[15])? clkdiv[27]:clkdiv[25];
+    
+    wire[31:0] ROM_data;//ROM
+    reg[3:0]rom_addr;
+    parameter INSTR_NUM = 11;
+    
+    dist_mem_im U_IM(
+        .a(rom_addr),
+        .spo(ROM_data)
+        );
+        
+    reg RegWrite;  //RF
+    reg [4:0]rs1,rs2,rd;
+    reg[31:0]WD;
+    wire [31:0]RD1,RD2;
+    RF u_rf(
+	.clk(clk_cpu),						//分频后的主时钟 CLK
+	.rstn(rstn),							//reset signal
+	.RFWr(RegWrite),						//Rfwrite = mem2reg  
+    .sw_i(sw_i), 		 		//sw_i[15]---sw_i[0]
+ 	.A1(rs1), 
+ 	.A2(rs2), 
+ 	.A3(rd),		// Register Num 
+ 	.WD(WD),					//Write data
+    .RD1(RD1),
+    .RD2(RD2)	//Data output port
+);
+    reg[5:0]rf_addr;
+    parameter REG_NUM = 32;
+
+    reg [31:0]i_data;
+    
+    always@(posedge clk_cpu or negedge rstn)begin
+        if(!rstn)begin
+            rom_addr<=4'b0;
+            rf_addr<=4'b0;
+        end
+        else if(sw_i[14]==1 && sw_i[13]==0)begin
+            if(rom_addr==INSTR_NUM)rom_addr<=4'b0;
+            else rom_addr=rom_addr+1'b1;
+        end
+        else if(sw_i[14]==0 && sw_i[13]==1)begin
+            if(rf_addr==REG_NUM)rom_addr<=5'b0;
+            else rf_addr=rf_addr+1'b1;
+        end
+    end
+    always@(*)begin
+        if(sw_i[14]==1)i_data<=ROM_data;
+        else i_data<=RD1;
+    end        
+    wire clk_16div;
+    clk_16divider clk16div(
+        .clk(clk),
+        .clk_16div(clk_16div)
+    );
+    
+    an_selector an_st(
+        .clk(clk_16div),
+        .rstn(rstn),
+        .sw_i(sw_i),
+        .i_data(i_data),
+        .an(disp_an_o),
+        .seg(disp_seg_o)
+    );
+endmodule
+
+
+module RF(
+input	clk,						//分频后的主时钟 CLK
+input	rstn,							//reset signal
+input	RFWr,						//Rfwrite = mem2reg  
+input 	[15:0] sw_i, 		 		//sw_i[15]---sw_i[0]
+input 	[4:0] A1, A2, A3,		// Register Num 
+input 	[31:0] WD,					//Write data
+output reg [31:0] RD1, RD2	//Data output port
+);
+    reg [31:0]rfs[31:0];
+    
+    initial begin
+        rfs[0]=0;
+        rfs[1]=rfs[0]+1'b1;
+        rfs[2]=2'b10;
+        rfs[3]=2'b11;
+        rfs[4]=3'b100;
+        rfs[5]=4'b101;
+        rfs[6]=4'b110;
+        rfs[7]=4'b111;
+        rfs[8]=5'b1000;
+        rfs[9]=5'b1001;
+        rfs[10]=5'b1010;
+        rfs[11]=5'b1011;
+        rfs[12]=rfs[11]+1'b1;
+        rfs[13]=rfs[12]+1'b1;
+        rfs[14]=rfs[13]+1'b1;
+        rfs[15]=rfs[14]+1'b1;
+        rfs[16]=rfs[15]+1'b1;
+        rfs[17]=rfs[16]+1'b1;
+        rfs[18]=rfs[17]+1'b1;
+        rfs[19]=rfs[18]+1'b1;
+        rfs[20]=rfs[19]+1'b1;
+        rfs[21]=rfs[20]+1'b1;
+        rfs[22]=rfs[21]+1'b1;
+        rfs[23]=rfs[22]+1'b1;
+        rfs[24]=rfs[23]+1'b1;
+        rfs[25]=rfs[24]+1'b1;
+        rfs[26]=rfs[25]+1'b1;
+        rfs[27]=rfs[26]+1'b1;
+        rfs[28]=rfs[27]+1'b1;
+        rfs[29]=rfs[28]+1'b1;
+        rfs[30]=rfs[29]+1'b1;
+        rfs[31]=rfs[30]+1'b1;
+    end
+    
+    always@(posedge clk )begin
+         RD1=rfs[A1];
+         RD2=rfs[A2];
+    end
+   
+    
+       
+    
+    
+    
+endmodule
